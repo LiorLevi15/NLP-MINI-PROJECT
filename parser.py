@@ -1,6 +1,7 @@
-import json
-import string
 import glob
+import json
+import random
+import string
 
 
 def parse(paragraph_file_name: string, summery_file_name: string, current_id: int, occur, s_letter, p_letter):
@@ -10,7 +11,15 @@ def parse(paragraph_file_name: string, summery_file_name: string, current_id: in
             p_line = p_file.readline()
             s_line = s_file.readline()
             if p_line == "" or s_line == "":
-                return parsed_file, current_id
+                random.shuffle(parsed_file)
+                lenth = len(parsed_file)
+                train_len = int(lenth * 0.8)
+                test_len = int((lenth - train_len) * 0.5)
+                return parsed_file[:train_len], \
+                       parsed_file[train_len:train_len + test_len], \
+                       parsed_file[train_len + test_len:], \
+                       current_id
+                # return parsed_file, current_id
             start_of_par = 0
             p_index_letters = ''
             for i, letter in enumerate(p_line):
@@ -58,12 +67,24 @@ def tab_occur_pred(occur):
 def load_parsed_file(file_sufix, occur, s_letter, p_letter, current_id):
     paragraph_path = f'/Users/llevi1/Desktop/personal/degree/Mini_Project/NLP-MINI-PROJECT/raw_files/{file_sufix}.txt'
     summary_path = f'/Users/llevi1/Desktop/personal/degree/Mini_Project/NLP-MINI-PROJECT/raw_files/{file_sufix}_summary.txt'
-    parsed_file, current_id = parse(paragraph_path, summary_path, current_id, occur, s_letter, p_letter)
+    # parsed_file, current_id = parse(paragraph_path, summary_path, current_id, occur, s_letter, p_letter)
+    parsed_file_train, parsed_file_test, parsed_file_validate, current_id = parse(paragraph_path, summary_path,
+                                                                                  current_id, occur, s_letter, p_letter)
 
     with open(
-            f'/Users/llevi1/Desktop/personal/degree/Mini_Project/NLP-MINI-PROJECT/parsed_files/{file_sufix}.json',
+            f'/Users/llevi1/Desktop/personal/degree/Mini_Project/NLP-MINI-PROJECT/parsed_files/{file_sufix}_train.json',
             'w') as file:
-        file.write(json.dumps(parsed_file, ensure_ascii=False))
+        file.write(json.dumps(parsed_file_train, ensure_ascii=False))
+
+    with open(
+            f'/Users/llevi1/Desktop/personal/degree/Mini_Project/NLP-MINI-PROJECT/parsed_files/{file_sufix}_test.json',
+            'w') as file:
+        file.write(json.dumps(parsed_file_test, ensure_ascii=False))
+
+    with open(
+            f'/Users/llevi1/Desktop/personal/degree/Mini_Project/NLP-MINI-PROJECT/parsed_files/{file_sufix}_validate.json',
+            'w') as file:
+        file.write(json.dumps(parsed_file_validate, ensure_ascii=False))
 
     # for entry in parsed_file: if entry['p_index_letters'] != entry['s_index_letters']: print( f"mismatch!!!!
     # p_index_letters= {entry['p_index_letters']} s_index_letters={entry['s_index_letters']}")
@@ -82,12 +103,13 @@ def parser_init():
              'lights_of_the_bible', 'measures_of_sight', 'the_war']
     for name in names:
         current_id = load_parsed_file(name, tab_occur_pred, tap_pred, tap_pred, current_id)
-    print(f'finished parsing text files into json files. Total number of entries: {current_id+1}')
+    print(f'finished parsing text files into json files. Total number of entries: {current_id + 1}')
 
 
-def concatenate_files():
+def concatenate_files_split(split):
     # List of JSON files to be concatenated
-    json_files = glob.glob('/Users/llevi1/Desktop/personal/degree/Mini_Project/NLP-MINI-PROJECT/parsed_files/*.json')
+    json_files = glob.glob(
+        f'/Users/llevi1/Desktop/personal/degree/Mini_Project/NLP-MINI-PROJECT/parsed_files/*_{split}.json')
     print(json_files)
 
     # Create an empty list to store the contents of each JSON file
@@ -100,8 +122,14 @@ def concatenate_files():
     # print(json_data)
 
     # Write the concatenated data to a new JSON file
-    with open("rabbi_kook_ugly.json", "w") as f:
+    with open(f"rabbi_kook_{split}.json", "w") as f:
         json.dump(json_data, f, ensure_ascii=False)
+
+
+def concatenate_files():
+    concatenate_files_split("train")
+    concatenate_files_split("test")
+    concatenate_files_split("validate")
 
 
 if __name__ == "__main__":
