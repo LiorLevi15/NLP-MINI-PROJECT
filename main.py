@@ -63,7 +63,7 @@ try:
 except (LookupError, OSError):
     if is_offline_mode():
         raise LookupError(
-            "Offline mode: run this script without TRANSFORMERS_OFFLINE first to download nltk data files"
+            "Offline mode: run this script without TRANSFORMERS_OFFLINE first to download nltk data raw_files"
         )
     with FileLock(".lock") as lock:
         nltk.download("punkt", quiet=True)
@@ -358,11 +358,11 @@ def main():
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
-    # Get the datasets: you can either provide your own CSV/JSON training and evaluation files (see below)
+    # Get the datasets: you can either provide your own CSV/JSON training and evaluation raw_files (see below)
     # or just provide the name of one of the public datasets available on the hub at https://huggingface.co/datasets/
     # (the dataset will be downloaded automatically from the datasets Hub).
     #
-    # For CSV/JSON files this script will use the first column for the full texts and the second column for the
+    # For CSV/JSON raw_files this script will use the first column for the full texts and the second column for the
     # summaries (unless you specify column names for this with the `text_column` and `summary_column` arguments).
     #
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
@@ -392,7 +392,7 @@ def main():
             cache_dir=model_args.cache_dir,
             use_auth_token=True if model_args.use_auth_token else None,
         )
-    # See more about loading any type of standard or custom dataset (from files, python dict, pandas DataFrame, etc) at
+    # See more about loading any type of standard or custom dataset (from raw_files, python dict, pandas DataFrame, etc) at
     # https://huggingface.co/docs/datasets/loading_datasets.html.
 
     # Load pretrained model and tokenizer
