@@ -1,5 +1,5 @@
 import json
-from typing import List
+import os
 
 import datasets
 
@@ -13,12 +13,7 @@ _LICENSE = ""
 
 # The HuggingFace Datasets library doesn't host the datasets but only points to the original raw_files.
 # This can be an arbitrary nested dict/list of URLs (see below in `_split_generators` method)
-_URL = "https://github.com/LiorLevi15/NLP-MINI-PROJECT/tree/master/DATA/parsed_data_splits/"
-_URLS = {
-    "train": _URL + "rabbi_kook_train.json",
-    "test": _URL + "rabbi_kook_test.json",
-    "dev": _URL + "rabbi_kook_dev.json",
-}
+_URL = "https://github.com/LiorLevi15/NLP-MINI-PROJECT/tree/master/DATA/parsed_data_splits"
 
 
 class RabbiKook(datasets.GeneratorBasedBuilder):
@@ -40,22 +35,49 @@ class RabbiKook(datasets.GeneratorBasedBuilder):
             # supervised_keys=("sentence", "label"),
         )
 
-    def _split_generators(self, dl_manager: datasets.DownloadManager) -> List[datasets.SplitGenerator]:
-        urls_to_download = self._URLS
-        downloaded_files = dl_manager.download_and_extract(urls_to_download)
+    def _split_generators(self, dl_manager):
+        # This method is tasked with downloading/extracting the data and defining the splits.
 
+        # dl_manager is a datasets.download.DownloadManager that can be used to download and extract URLS It can
+        # accept any type or nested list/dict and will give back the same structure with the url replaced with path
+        # to local raw_files. By default the archives will be extracted and a path to a cached folder where they are
+        # extracted is returned instead of the archive
+        data_dir = dl_manager.download_and_extract(_URL)
         return [
-            datasets.SplitGenerator(name=datasets.Split.TRAIN, gen_kwargs={"filepath": downloaded_files["train"]}),
-            datasets.SplitGenerator(name=datasets.Split.TEST, gen_kwargs={"filepath": downloaded_files["test"]}),
-            datasets.SplitGenerator(name=datasets.Split.VALIDATION, gen_kwargs={"filepath": downloaded_files["dev"]}),
+            datasets.SplitGenerator(
+                name=datasets.Split.TRAIN,
+                # These kwargs will be passed to _generate_examples
+                gen_kwargs={
+                    "filepath": os.path.join(data_dir, "rabbi_kook_train.json"),
+                    "split": "train",
+                },
+            ),
+            datasets.SplitGenerator(
+                name=datasets.Split.VALIDATION,
+                # These kwargs will be passed to _generate_examples
+                gen_kwargs={
+                    "filepath": os.path.join(data_dir, "rabbi_kook_validate.json"),
+                    "split": "dev",
+                },
+            ),
+            datasets.SplitGenerator(
+                name=datasets.Split.TEST,
+                # These kwargs will be passed to _generate_examples
+                gen_kwargs={
+                    "filepath": os.path.join(data_dir, "rabbi_kook_test.json"),
+                    "split": "test"
+                },
+            ),
         ]
 
-    def _generate_examples(self, filepath):
-        """This function returns the examples in the raw (text) form."""
-        print(f'generating examples from = {filepath}')
-        with open(filepath) as f:
-            data_list = json.load(f)
-            for data in data_list:
+    # method parameters are unpacked from `gen_kwargs` as given in `_split_generators`
+    def _generate_examples(self, filepath, split):
+        # TODO: This method handles input defined in _split_generators to yield (key, example) tuples from the dataset.
+        # The `key` is for legacy reasons (tfds) and is not important in itself, but must be unique for each example.
+        with open(filepath, encoding="utf-8") as f:
+            for _, row in enumerate(f):
+                data = json.loads(row)
+                # Yields examples as (key, example) tuples
                 yield data["id"], {
                     "paragraph": data["paragraph"],
                     "summary": data["summary"],
